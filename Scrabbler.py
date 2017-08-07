@@ -4,20 +4,6 @@ import pickle
 from itertools import combinations
 
 
-class Board:
-    def __init__(self, width, height):
-        self.height = 15
-        self.width = 15
-        self.board_array = BoardTile[15][15]
-
-
-class BoardTile:
-    def __init__(self, x , y):
-        self.char = ''
-        self.type = 0
-        self.x = x
-        self.y = y
-
 
 class WordFinder:
 
@@ -94,6 +80,10 @@ class WordFinder:
                 print(word)
             input("Press enter to start over")
 
-if __name__ == '__main__':
+
+def main():
     word_finder = WordFinder()
     word_finder.init()
+
+if __name__ == '__main__':
+    main()
