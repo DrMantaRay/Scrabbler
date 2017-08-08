@@ -4,9 +4,9 @@ import pickle
 from itertools import combinations
 
 
+# Class that finds possible words given tiles in hand and on the board
 
 class WordFinder:
-
     # initializes various useful variables
     def __init__(self):
         self.hand_letters = ""
