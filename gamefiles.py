@@ -51,6 +51,8 @@ class Board:
         return False
 
     def swap_tiles(self, player, tiles):
+        if len(tiles) > len(self.tile_list):
+            return 0
         if self.contains(tiles, player.get_letters()):
             player.remove_letters(tiles)
             self.fill_tiles(player)
@@ -74,6 +76,8 @@ class Board:
                     self.board_array[y][x_pos].set_letter(word[y-y_pos])
                     tiles.add(self.board_array[y][x_pos])
                 for y in range(y_pos, y_pos + len(word)):
+                    if self.board_array[y][x_pos].multiplier is False:
+                        continue
                     cross_word = self.get_word_at_xy(x_pos, y, 'h', word[y-y_pos])
                     if len(cross_word[0]) > 1:
                         score += self.score(cross_word[1], cross_word[2], cross_word[0], 'h')
@@ -90,6 +94,8 @@ class Board:
                     self.board_array[y_pos][x].set_letter(word[x-x_pos])
                     tiles.add(self.board_array[y_pos][x])
                 for x in range(x_pos, x_pos + len(word)):
+                    if self.board_array[y_pos][x].multiplier is False:
+                        continue
                     cross_word = self.get_word_at_xy(x, y_pos, 'v', word[x-x_pos])
                     if len(cross_word[0]) > 1:
                         score += self.score(cross_word[1], cross_word[2], cross_word[0], 'v')
@@ -100,9 +106,12 @@ class Board:
             for tile in tiles:
                 tile.multiplier = False
             player.increment_score(score)
-            return 1
+            if type(score) is int:
+                return score
+            else:
+                return -1
         else:
-            -1
+            return -1
 
     # Checks to see if a proposed word is adjacent to an already played word
     def check_adjacency(self, word, x_pos, y_pos, orientation):
@@ -121,7 +130,7 @@ class Board:
     # Checks to see if the proposed word fits on the board and if the player has the correct letters to play it
     def check_word(self, player, word, x_pos, y_pos, orientation):
         star_tile = False
-        remaining_letter_list = list(player.get_only_letters())
+        remaining_letter_list = list(player.get_letters())
         blanks = 0
 
         # Checks to see if the move is adjacent to tiles already plays if it is not the first turn
@@ -193,7 +202,7 @@ class Board:
                 if len(cross_word[0]) > 1:
                     if not self.dict_check(cross_word[0]):
                         return False
-        if len(remaining_letter_list) == len(player.get_only_letters()):
+        if len(remaining_letter_list) == len(player.get_letters()):
             return False
         if self.first_turn is True:
             if star_tile is False:
@@ -344,9 +353,6 @@ class Player:
     def get_letters(self):
         return self.letters
 
-    def get_only_letters(self):
-        return map(lambda x: x[0], self.letters)
-
     def remove_letters(self, letters):
         for letter in letters:
             self.letters.remove(letter)
@@ -368,8 +374,8 @@ def main():
     board = Board("boards/WordsWithFriends.txt", "dicts/sowpods.pick", 2)
     board.load_tiles(settings.words_with_friends_dict)
     print(board)
-    board.players[0].set_letters(['f', 'e', 'l', 'l', 'w'])
-    print(board.play_word(board.players[0], "few", 7, 7, 'v'))
+    board.players[0].set_letters(['t', 'e', 'a', 'l', 'w'])
+    print(board.play_word(board.players[0], "teal", 7, 7, 'v'))
     print(board)
     board.players[0].set_letters([ 'w', 'e', 'd', 't', 'e'])
     print(board.play_word(board.players[0], "wed", 7, 9, 'h'))
