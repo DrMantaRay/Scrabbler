@@ -1,7 +1,7 @@
 import csv
 import settings
 import pickle
-
+import random
 
 # Class for the game board
 class Board:
@@ -38,19 +38,43 @@ class Board:
                 self.out_of_letters = 1
                 break
             else:
-                player.add_letter(self.tile_list.pop())
+                player.add_letter(self.tile_list.pop()[0])
 
-    # Plays a word
+    @staticmethod
+    def contains(small, big):
+        for i in range(len(big) - len(small) + 1):
+            for j in range(len(small)):
+                if big[i + j] != small[j]:
+                    break
+            else:
+                return i, i + len(small)
+        return False
+
+    def swap_tiles(self, player, tiles):
+        if self.contains(tiles, player.get_letters()):
+            player.remove_letters(tiles)
+            self.fill_tiles(player)
+            self.add_tiles(tiles)
+            return 1
+        else:
+            return -1
+
+    # Plays a word, and updates the player's score. Returns -1 if the word played is invalid and 1 if successful
     def play_word(self, player, word, x_pos, y_pos, orientation):
         score = 0
         tiles = set()
         if self.check_word(player, word, x_pos, y_pos, orientation) and self.dict_check(word):
             if orientation == 'v':
                 for y in range(y_pos, y_pos + len(word)):
+                    if not self.board_array[y][x_pos].is_alpha():
+                        if word[y-y_pos] in player.get_letters():
+                            player.remove_letters(word[y-y_pos])
+                        else:
+                            player.remove_letters('/')
                     self.board_array[y][x_pos].set_letter(word[y-y_pos])
                     tiles.add(self.board_array[y][x_pos])
                 for y in range(y_pos, y_pos + len(word)):
-                    cross_word = self.get_word_at_xy(x_pos, y, 'h')
+                    cross_word = self.get_word_at_xy(x_pos, y, 'h', word[y-y_pos])
                     if len(cross_word[0]) > 1:
                         score += self.score(cross_word[1], cross_word[2], cross_word[0], 'h')
                         for x_cor in range(cross_word[1], len(word) + cross_word[1]):
@@ -58,10 +82,15 @@ class Board:
                 score += self.score(x_pos, y_pos, word, orientation)
             elif orientation == 'h':
                 for x in range(x_pos, x_pos + len(word)):
+                    if not self.board_array[y_pos][x].is_alpha():
+                        if word[x-x_pos] in player.get_letters():
+                            player.remove_letters(word[x-x_pos])
+                        else:
+                            player.remove_letters('/')
                     self.board_array[y_pos][x].set_letter(word[x-x_pos])
                     tiles.add(self.board_array[y_pos][x])
                 for x in range(x_pos, x_pos + len(word)):
-                    cross_word = self.get_word_at_xy(x, y_pos, 'v')
+                    cross_word = self.get_word_at_xy(x, y_pos, 'v', word[x-x_pos])
                     if len(cross_word[0]) > 1:
                         score += self.score(cross_word[1], cross_word[2], cross_word[0], 'v')
                         for y_cor in range(cross_word[1], len(word) + cross_word[1]):
@@ -70,8 +99,8 @@ class Board:
             self.first_turn = False
             for tile in tiles:
                 tile.multiplier = False
-            return score
-
+            player.increment_score(score)
+            return 1
         else:
             -1
 
@@ -92,10 +121,14 @@ class Board:
     # Checks to see if the proposed word fits on the board and if the player has the correct letters to play it
     def check_word(self, player, word, x_pos, y_pos, orientation):
         star_tile = False
-        remaining_letter_list = list(player.get_letters())
+        remaining_letter_list = list(player.get_only_letters())
         blanks = 0
+
+        # Checks to see if the move is adjacent to tiles already plays if it is not the first turn
         if self.check_adjacency(word, x_pos, y_pos, orientation) is False and self.first_turn is False:
             return False
+
+        # Keeps track of remaining blank tiles, if any
         for letter in remaining_letter_list:
             if letter == '/':
                 blanks += 1
@@ -125,7 +158,7 @@ class Board:
                         remaining_letter_list.remove('/')
                     else:
                         return False
-                cross_word = self.get_word_at_xy(x, y_pos, 'v')
+                cross_word = self.get_word_at_xy(x, y_pos, 'v', word[x-x_pos])
                 if len(cross_word[0]) > 1:
                     if not self.dict_check(cross_word[0]):
                         return False
@@ -156,11 +189,11 @@ class Board:
                         remaining_letter_list.remove('/')
                     else:
                         return False
-                cross_word = self.get_word_at_xy(x_pos, y, 'v')
+                cross_word = self.get_word_at_xy(x_pos, y, 'v', word[y-y_pos])
                 if len(cross_word[0]) > 1:
                     if not self.dict_check(cross_word[0]):
                         return False
-        if len(remaining_letter_list) == len(player.get_letters()):
+        if len(remaining_letter_list) == len(player.get_only_letters()):
             return False
         if self.first_turn is True:
             if star_tile is False:
@@ -208,8 +241,8 @@ class Board:
 
     # Returns possible words going through a specific location on the board. Useful for finding extra words
     # formed from laying down tiles
-    def get_word_at_xy(self, x_pos, y_pos, orientation):
-        word = self.board_array[y_pos][x_pos].get_letter()
+    def get_word_at_xy(self, x_pos, y_pos, orientation, letter):
+        word = letter
         x = x_pos
         y = y_pos
         if orientation == 'v':
@@ -236,9 +269,22 @@ class Board:
         self.tile_dict = dict
         self.tile_list = settings.form_word_list(self.tile_dict)
 
+    def add_tiles(self, tiles):
+        for tile in tiles:
+            self.tile_list.append((tile, self.tile_dict[tile][1]))
+        random.shuffle(self.tile_list)
+
     # Resets the boardd
     def reset(self):
         self.tile_list = settings.form_word_list(self.tile_dict)
+
+    def change_player_type(self, player_number, type):
+        if type == "machine":
+            self.player[player_number].machine = True
+        elif type == "human":
+            self.player[player_number].machine = False
+        else:
+            print("The only two player types are human or machine")
 
     # Prints the board with coordinates
     def __str__(self):
@@ -287,6 +333,7 @@ class Player:
     def __init__(self):
         self.score = 0
         self.letters = []
+        self.machine = False
 
     def get_score(self):
         return self.score
@@ -296,6 +343,9 @@ class Player:
 
     def get_letters(self):
         return self.letters
+
+    def get_only_letters(self):
+        return map(lambda x: x[0], self.letters)
 
     def remove_letters(self, letters):
         for letter in letters:
@@ -307,23 +357,26 @@ class Player:
     def set_letters(self, letters):
         self.letters = letters
 
+    def letter_vals(self, val_dict):
+        return_list = []
+        for letter in self.letters:
+            return_list.append((letter, val_dict[letter][1]))
+        return return_list
 
 #Testing the Board
 def main():
     board = Board("boards/WordsWithFriends.txt", "dicts/sowpods.pick", 2)
     board.load_tiles(settings.words_with_friends_dict)
     print(board)
-    board.players[0].set_letters(['h', 'e', 'l', 'l', 'o'])
-    print(board.play_word(board.players[0], "hello", 7, 7, 'v'))
+    board.players[0].set_letters(['f', 'e', 'l', 'l', 'w'])
+    print(board.play_word(board.players[0], "few", 7, 7, 'v'))
     print(board)
-    board.players[0].set_letters([ 'o', 'r', 'a', 't', 'e'])
-    print(board.play_word(board.players[0], "rate", 8, 11, 'v'))
+    board.players[0].set_letters([ 'w', 'e', 'd', 't', 'e'])
+    print(board.play_word(board.players[0], "wed", 7, 9, 'h'))
     print(board)
-    board.players[0].set_letters(['t', 'r', '/', 't', 'e'])
-    print(board.play_word(board.players[0], "tree", 8, 4, 'v'))
-    print(board)
-    board.players[0].set_letters(['t', 'r', '/', 't', 'e'])
-    print(board.play_word(board.players[0], "tree", 0, 4, 'v'))
+    board.players[0].set_letters(['f', 'e', '/', 't', 'e'])
+    print(board.play_word(board.players[0], "few", 6, 8, 'h'))
+    print(board.check_word(board.players[0], "few", 6, 8, 'h'))
     print(board)
 
 if __name__ == '__main__':
