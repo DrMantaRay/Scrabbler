@@ -28,6 +28,7 @@ class PlayGame:
             print(score_string)
             print(self.board)
             if self.board.players[player_num].machine is True:
+                print("It is the bot Player " + str(player_num) + "'s turn.")
                 Bot.play(self.board, player_num)
                 self.turn += 1
 
@@ -116,7 +117,8 @@ class PlayGame:
 
     def choose_game(self, number, num_players, num_ai):
         if number == 1:
-            self.board = gamefiles.Board("boards/WordsWithFriends.txt", "dicts/sowpods.pick", num_players)
+            self.board = gamefiles.Board("boards/WordsWithFriends.txt", "dicts/enable.pick", num_players)
+            self.board.bonus = 35
             self.board.load_tiles(settings.words_with_friends_dict)
             for i in range(num_players - num_ai, num_players):
                 self.board.players[i].machine = True

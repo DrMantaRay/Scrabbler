@@ -14,7 +14,7 @@ class Board:
         self.players = [Player() for i in range(num_players)]
         self.tile_list = []
         self.tile_dict = {}
-        self.out_of_letters = 0
+        self.bonus = 0
         self.first_turn = True
         self.word_dict = pickle.load(open(word_dict_path, 'rb'))
 
@@ -35,7 +35,6 @@ class Board:
     def fill_tiles(self, player):
         while len(player.get_letters()) < 7:
             if not self.tile_list:
-                self.out_of_letters = 1
                 break
             else:
                 player.add_letter(self.tile_list.pop()[0])
@@ -75,6 +74,8 @@ class Board:
                             player.remove_letters('/')
                     self.board_array[y][x_pos].set_letter(word[y-y_pos])
                     tiles.add(self.board_array[y][x_pos])
+
+                # Must change score function to include cross_words
                 for y in range(y_pos, y_pos + len(word)):
                     if self.board_array[y][x_pos].multiplier is False:
                         continue
@@ -105,6 +106,8 @@ class Board:
             self.first_turn = False
             for tile in tiles:
                 tile.multiplier = False
+            if len(player.get_letters()) == 0:
+                score += self.bonus
             player.increment_score(score)
             if type(score) is int:
                 return score
@@ -230,22 +233,24 @@ class Board:
             for y in range(y_pos, y_pos + len(word)):
                 tiles.append(self.board_array[y][x_pos])
 
+        i = 0
         for tile in tiles:
             if tile.multiplier is True:
                 if tile.special == '*':
                     multiplier *= 3
-                    return_score += self.tile_dict[tile.get_letter()][1]
+                    return_score += self.tile_dict[word[i]][1]
                 elif tile.special == '$':
-                    return_score += 2 * self.tile_dict[tile.get_letter()][1]
+                    return_score += 2 * self.tile_dict[word[i]][1]
                 elif tile.special == '+':
                     multiplier *= 2
-                    return_score += self.tile_dict[tile.get_letter()][1]
+                    return_score += self.tile_dict[word[i]][1]
                 elif tile.special == '#':
-                    return_score += 3 * self.tile_dict[tile.get_letter()][1]
+                    return_score += 3 * self.tile_dict[word[i]][1]
                 else:
-                    return_score += self.tile_dict[tile.get_letter()][1]
+                    return_score += self.tile_dict[word[i]][1]
             else:
-                return_score += self.tile_dict[tile.get_letter()][1]
+                return_score += self.tile_dict[word[i]][1]
+            i += 1
         return multiplier * return_score
 
     # Returns possible words going through a specific location on the board. Useful for finding extra words
