@@ -113,7 +113,9 @@ def main():
     while len(board.tile_list) > 0:
         l.append(board.tile_list.pop()[0])
     def play_word(word, x, y , pos):
-        board.players[0].set_letters(l)
+        if word =="denims":
+            print(l)
+        board.players[0].set_letters(list(l))
         score = board.play_word(board.players[0], word, x, y, pos)
         return
 
@@ -138,9 +140,17 @@ def main():
     play_word("not", 3,3,"h")
     play_word("zed",12,10,"v")
     play_word("folky",7,0,"h")
+    play_word("hoer",8,4,"h")
+    play_word("oi",9,1,"h")
+    play_word("aha",1,12,"v")
+    play_word("vein", 11,11,"v")
+    play_word("rhea", 13, 11, "v")
+    play_word("fair", 10,3,"h")
+    print(board.score_all(0,0,"denims","h"))
+    play_word("denims",0,0,"h")
+    play_word("vids",0,14,"v")
     print(board)
-    board.players[0].set_letters(list("rihehoe"))
-    print(board.score_all(8,4,"hoer","h"))
+    board.players[0].set_letters(list("w"))
     Bot.play(board, 0)
 
 if __name__ == '__main__':

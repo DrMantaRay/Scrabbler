@@ -67,8 +67,9 @@ class Board:
                             player.remove_letters(word[y-y_pos])
                         else:
                             blank_index.append(y-y_pos)
-                            player.remove_letters('/')
                             self.board_array[y][x_pos].blank = True
+                            player.remove_letters('/')
+
                     self.board_array[y][x_pos].set_letter(word[y-y_pos])
                     tiles.add(self.board_array[y][x_pos])
 
@@ -87,8 +88,9 @@ class Board:
                             player.remove_letters(word[x-x_pos])
                         else:
                             blank_index.append(x-x_pos)
-                            player.remove_letters('/')
                             self.board_array[y_pos][x].blank = True
+                            player.remove_letters('/')
+
                     self.board_array[y_pos][x].set_letter(word[x-x_pos])
                     tiles.add(self.board_array[y_pos][x])
 
