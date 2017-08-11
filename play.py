@@ -9,7 +9,7 @@ class PlayGame:
     def __init__(self):
         self.board = None
         self.turn = 0
-
+        self.pass_counter = 0
     def play(self):
         print("Welcome to Scrabble!")
         num_players = int(input("Enter the number of total players:"))
@@ -124,6 +124,16 @@ class PlayGame:
                 self.board.players[i].machine = True
             for player in self.board.players:
                 self.board.fill_tiles(player)
+        if number == 2:
+            self.board = gamefiles.Board("boards/WordsWithFriends.txt", "dicts/enable.pick", num_players)
+            self.board.bonus = 35
+            self.board.load_tiles(settings.words_with_friends_dict)
+            for i in range(num_players - num_ai, num_players):
+                self.board.players[i].machine = True
+            for tile in self.board.tile_list:
+                for player in self.board.players:
+                    player.add_letter(tile[0])
+                    player.players[1].add_letter(tile[0])
 
 
 def main():
